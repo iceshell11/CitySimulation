@@ -37,7 +37,8 @@ namespace SimulationCrossplatform
 
                 try
                 {
-                    desktop.MainWindow = new MainWindow().Setup(args[0]);
+                    desktop.MainWindow = new MainWindow();
+                    ((MainWindow)desktop.MainWindow).Setup(args[0]);
                 }
                 catch (JsonSerializationException e)
                 {

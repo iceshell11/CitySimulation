@@ -22,10 +22,9 @@
 					<TextBlock Text="SleepTime" Margin="5" VerticalAlignment="Center"></TextBlock>
 					<NumericUpDown Name="SleepTime" ShowButtonSpinner="False" Value="0" Minimum="0" Margin="5" ValueChanged="SleepTime_OnValueChanged"></NumericUpDown>
 
-					<Button Name="StartButton" Content="Start" Click="StartButton_OnClick" Margin="5"></Button>
-					<Button Name="PauseButton" Content="Pause" Click="PauseButton_OnClick" Margin="5"></Button>
-					<Button Name="StopButton" Content="Stop" Click="StopButton_OnClick" Margin="5"></Button>
-
+					<Button Name="StartButton" Content="Start" Click="StartButton_OnClick" IsEnabled="False" Margin="5"></Button>
+					<Button Name="PauseButton" Content="Pause" Click="PauseButton_OnClick" IsEnabled="False" Margin="5"></Button>
+					<Button Name="StopButton" Content="Stop" Click="StopButton_OnClick" IsEnabled="False" Margin="5"></Button>
 					<TextBlock Name="TimeLabel" Text="--:--" Width="100" Margin="30,5" VerticalAlignment="Center"></TextBlock>
 					<TextBlock Text="Tiles opacity" Margin="5" VerticalAlignment="Center"></TextBlock>
 					<Slider Name="TilesOpacitySlider" Value="1" Minimum="0" Maximum="1" Width="100" Margin="0,-7" PointerMoved="TilesOpacitySlider_OnPointerMoved"></Slider>
@@ -36,15 +35,17 @@
 						<ColumnDefinition Width="300"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+						<RowDefinition Height="3"/>
 						<RowDefinition/>
 						<RowDefinition/>
 					</Grid.RowDefinitions>
-                    <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Background="Gray">
+                    <ProgressBar Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Name="ProgressBar" IsVisible="False" Value="0"></ProgressBar>
+                    <Border Grid.Row="1" Grid.Column="0" Grid.RowSpan="2" Background="Gray">
                         <simulationCrossplatform:SimulationCanvas Name="SimulationCanvas">
                         </simulationCrossplatform:SimulationCanvas>
                     </Border>
-					<controls:RealtimePlot  Grid.Row="0" Grid.Column="1" Name="Plot1"></controls:RealtimePlot>
-					<controls:RealtimePlot  Grid.Row="1" Grid.Column="1" Name="Plot2"></controls:RealtimePlot>
+					<controls:RealtimePlot  Grid.Row="1" Grid.Column="1" Name="Plot1"></controls:RealtimePlot>
+					<controls:RealtimePlot  Grid.Row="2" Grid.Column="1" Name="Plot2"></controls:RealtimePlot>
 			</Grid>
 			</Grid>
 		</Border>

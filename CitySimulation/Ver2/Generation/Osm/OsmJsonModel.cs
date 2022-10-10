@@ -82,6 +82,10 @@ namespace CitySimulation.Ver2.Generation.Osm
 
         [JsonProperty("color")]
         public string Color { get; set; }
+
+        [JsonProperty("skip_osm_ratio")]
+        [DefaultValue(0)]
+        public double SkipRatio { get; set; }
     }
 
     public partial class OsmTransportData

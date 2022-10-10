@@ -166,10 +166,10 @@ namespace CitySimulation
 
         }
 
-        public void Setup()
+        public void Setup(Action<int> progressCallback = null)
         {
             Context.CurrentTime = new CityTime();
-            Context.Routes = City.Facilities.CreateRouteTable();
+            Context.Routes = City.Facilities.CreateRouteTable(progressCallback);
             IReadOnlyList<Facility> facilities = City.Facilities.Values.ToList();
             foreach (Transport bus in facilities.OfType<Transport>())
             {

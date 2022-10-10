@@ -39,15 +39,11 @@ namespace SimulationCrossplatform
             InitializeComponent();
         }
 
-        public MainWindow Setup(string configPath)
+        public void Setup(string configPath)
         {
             _configPath = configPath;
-
             controller = GenerateOsmController(configPath);
-            controller.Setup();
-
             var drawConfig = JsonConvert.DeserializeObject<DrawJsonConfig>(File.ReadAllText(configPath));
-
             SimulationCanvas.Setup(new TileRenderer()
             {
                 ZoomClose = drawConfig.ZoomClose,
@@ -65,20 +61,46 @@ namespace SimulationCrossplatform
 
             SetupVisibilityLayers(controller.City.Facilities);
             SetupPlots(drawConfig);
-
-
-            double aX = controller.City.Facilities.Values.OfType<FacilityConfigurable>().Select(x=>x.Coords.X).Average();
-            double aY = controller.City.Facilities.Values.OfType<FacilityConfigurable>().Select(x=>x.Coords.Y).Average();
+            double aX = controller.City.Facilities.Values.OfType<FacilityConfigurable>().Select(x => x.Coords.X).Average();
+            double aY = controller.City.Facilities.Values.OfType<FacilityConfigurable>().Select(x => x.Coords.Y).Average();
             SimulationCanvas.DrawPoint = new Avalonia.Point(-aX, -aY).MapToScreen();
 
             SimulationCanvas.Update(controller);
 
+            Task.Run(() =>
+            {
+                controller.Setup(ProgressCallback);
+                Dispatcher.UIThread.InvokeAsync(OnModelReady);
+            });
+        }
 
-            return this;
+        private void ProgressCallback(int value)
+        {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                ProgressBar.IsVisible = value < 100;
+                ProgressBar.Value = value;
+            });
+        }
+
+        private void OnModelReady()
+        {
+            ProgressCallback(100);
+            SimulationCanvas.InvalidateVisual();
+            StartButton.IsEnabled = true;
+            PauseButton.IsEnabled = true;
+            StopButton.IsEnabled = true;
         }
 
         private void ResetModel()
         {
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                StartButton.IsEnabled = false;
+                PauseButton.IsEnabled = false;
+                StopButton.IsEnabled = false;
+            });
+
             var (city, config, random) = GenerateOsmCity(_configPath);
             controller.City = city;
             controller.Context = new Context()
@@ -88,8 +110,13 @@ namespace SimulationCrossplatform
                 Params = config.Params,
             };
 
-            controller.Setup();
-            SimulationCanvas.InvalidateVisual();
+            Dispatcher.UIThread.InvokeAsync(SimulationCanvas.InvalidateVisual);
+
+            Task.Run(() =>
+            {
+                controller.Setup();
+                Dispatcher.UIThread.InvokeAsync(OnModelReady);
+            });
         }
 
         void SetupVisibilityLayers(FacilityManager facilities)

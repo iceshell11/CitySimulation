@@ -140,13 +140,15 @@ namespace CitySimulation.Ver2.Generation.Osm
                 }
             }
 
-            for (int i = 0; i < buildings.Length; i++)
-            {
-                for (int j = i + 1; j < buildings.Length; j++)
-                {
-                    city.Facilities.LinkUnconnected(buildings[i], buildings[j]);
-                }
-            }
+            // Жертвуем оптимальностью маршрутов ради производительности
+
+            //for (int i = 0; i < buildings.Length; i++)
+            //{
+            //    for (int j = i + 1; j < buildings.Length; j++)
+            //    {
+            //        city.Facilities.LinkUnconnected(buildings[i], buildings[j]);
+            //    }
+            //}
         }
 
 
@@ -467,6 +469,19 @@ namespace CitySimulation.Ver2.Generation.Osm
 
 
                 return result;
+            }
+
+
+            facilities.Shuffle(random);
+
+            foreach (var (type, locData) in jsonModel.LocationTypes)
+            {
+                if (locData.SkipRatio > 0)
+                {
+                    int count = (int)(facilities.Count(x=>x.Type == type) * locData.SkipRatio);
+                    int deleted = 0;
+                    facilities.RemoveAll(x => x.Type == type && deleted++ < count);
+                }
             }
 
             var stationsRoutes = GetStationRoutes(routes);

@@ -36,6 +36,7 @@
       "people_std": 3,
       "infection_probability": 0.5,
       "osm_tags": ["apartments", "house"],
+      "skip_osm_ratio": 0.9,
       "color": "yellow"
     },
     "factory": {
@@ -43,6 +44,7 @@
       "people_std": 3,
       "infection_probability": 0.3,
       "osm_tags": ["industrial", "commercial", "factory"],
+      "skip_osm_ratio": 0.9,
       "color": "cyan"
     },
     "church": {

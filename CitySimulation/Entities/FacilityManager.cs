@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using CitySimulation.Navigation;
 using CitySimulation.Tools;
 
@@ -60,15 +61,19 @@ namespace CitySimulation.Entities
             f2.Links.Add(new Link(f2, f1, length));
         }
 
-        public RouteTable CreateRouteTable()
+        public RouteTable CreateRouteTable(Action<int> progressCallback = null)
         {
+            progressCallback?.Invoke(10);
+
             int f_count = facilities_list.Count;
             PathSegment[,] table = new PathSegment[f_count, f_count];
+            double[,] tb = new double[f_count, f_count];
 
-            var facilitiesSpan = CollectionsMarshal.AsSpan(facilities_list);
 
-            for (int i = 0; i < f_count; i++)
+            Parallel.For(0, f_count, i =>
             {
+                var facilitiesSpan = CollectionsMarshal.AsSpan(facilities_list);
+
                 for (int j = 0; j < f_count; j++)
                 {
                     Link link = null;
@@ -84,30 +89,46 @@ namespace CitySimulation.Entities
                     if (link != null)
                     {
                         table[i, j] = new PathSegment(link, link.Length, link.Time);
+                        tb[i, j] = table[i, j].TotalTime;
                     }
                 }
-            }
+            });
+
+            progressCallback?.Invoke(20);
 
 
-            for (int i1 = 0; i1 < f_count; i1++)
+            Parallel.For(0, f_count, i1 =>
             {
+                var tbs = MemoryMarshal.CreateSpan(ref tb[0,0], table.GetLength(0) * table.GetLength(1));
                 for (int i2 = 0; i2 < f_count; i2++)
                 {
                     for (int i3 = 0; i3 < f_count; i3++)
                     {
                         if (i2 != i3)
                         {
-                            if (table[i2, i1] != null && table[i1, i3] != null && (table[i2, i3] == null || table[i2, i3].TotalTime > table[i2, i1].TotalTime + table[i1, i3].TotalTime))
+                            if (tbs[i2 * f_count + i1] != 0 && tbs[i1 * f_count + i3] != 0 && (tbs[i2 * f_count + i3] == 0 
+                                                                         || tbs[i2 * f_count + i3] > tbs[i2 * f_count + i1] + tbs[i1 * f_count + i3]))
                             {
-                                table[i2, i3] = new PathSegment(table[i2, i1].Link, table[i2, i1].TotalLength + table[i1, i3].TotalLength, table[i2, i1].TotalTime + table[i1, i3].TotalTime);
+                                table[i2, i3] = new PathSegment(
+                                    table[i2, i1].Link,
+                                    table[i2, i1].TotalLength + table[i1, i3].TotalLength,
+                                    table[i2, i1].TotalTime + table[i1, i3].TotalTime
+                                    );
+                                tbs[i2 * f_count + i3] = tbs[i2 * f_count + i1] + tbs[i1 * f_count + i3];
                             }
                         }
                     }
                 }
-            }
+            });
 
-            for (int i = 0; i < f_count; i++)
+            progressCallback?.Invoke(70);
+
+
+            Parallel.For(0, f_count, i =>
             {
+                var facilitiesSpan = CollectionsMarshal.AsSpan(facilities_list);
+                var tbs = MemoryMarshal.CreateSpan(ref tb[0, 0], table.GetLength(0) * table.GetLength(1));
+
                 for (int j = 0; j < f_count; j++)
                 {
                     Link link = null;
@@ -122,27 +143,34 @@ namespace CitySimulation.Entities
 
                     if (link != null)
                     {
-                        if (table[i, j] == null || table[i, j].TotalTime > link.Time)
+                        if (table[i, j] == null || tbs[i * f_count + j] > link.Time)
                         {
                             table[i, j] = new PathSegment(link, link.Length, link.Time);
+                            tbs[i * f_count + j] = link.Time;
                         }
                     }
                 }
-            }
+            });
+
+            progressCallback?.Invoke(90);
 
             RouteTable result = new RouteTable();
 
-
-            for (int i1 = 0; i1 < f_count; i1++)
+            Parallel.For(0, f_count, i1 =>
             {
+                var facilitiesSpan = CollectionsMarshal.AsSpan(facilities_list);
+
                 for (int i2 = 0; i2 < f_count; i2++)
                 {
                     if (table[i1, i2] != null)
                     {
-                        result.Add((facilitiesSpan[i1], facilitiesSpan[i2]), table[i1, i2]);
+                        lock (result)
+                        {
+                            result.Add((facilitiesSpan[i1], facilitiesSpan[i2]), table[i1, i2]);
+                        }
                     }
                 }
-            }
+            });
 
             result.Setup();
 
